@@ -34,7 +34,6 @@ export async function generateInputImage(image: UploadedImage): Promise<InputIma
 
     inputImage = {
         id,
-        index: 0,
         image: {
             full: {
                 file,

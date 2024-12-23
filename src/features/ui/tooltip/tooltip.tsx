@@ -1,4 +1,10 @@
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
+import React, {
+    FocusEvent,
+    ReactNode,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { OVERLAY_ID, OVERLAY_Z_INDEX } from '../../../lib/constants';
 import styled, { css } from 'styled-components';
@@ -35,7 +41,7 @@ export function Tooltip({
     const focusTimeout = useRef<NodeJS.Timeout>();
     const modifiers = useModifiersRef();
     const mouse = useMouseInputRef();
-    const targetElement = useRef<HTMLElement | null>(null);
+    const targetElement = useRef<HTMLDivElement>(null!);
 
     useEffect(() => {
         let timeout = fadeOutTimeout.current;
@@ -56,11 +62,13 @@ export function Tooltip({
     }, [hoverIntended]);
 
     useEffect(() => {
-        if (!targetElement || !contentRef.current || !targetElement.current) return;
+        if (!contentRef.current) return;
+        
+        const child = targetElement.current.children[0];
 
         if (isOpen) {
             const [left, top] = getRenderParams(
-                targetElement.current.getBoundingClientRect(),
+                child.getBoundingClientRect(),
                 contentRef.current.getBoundingClientRect(),
                 placement
             );
@@ -91,42 +99,21 @@ export function Tooltip({
             focusTimeout.current = setTimeout(() => {
                 setIsOpen(true);
             }, openDelay);
-            targetElement.current = event.currentTarget;
             clearTimeout(fadeOutTimeout.current);
         }
     }
 
-    function handleMouseEnter(event: MouseEvent) {
-        if (isOpen) return;
-
-        if (event.target instanceof HTMLElement) {
-            targetElement.current = event.target;
-            setIsHovered(true);
-        }
-    }
-
-    function handleMouseLeave() {
-        setIsHovered(false);
-    }
-
-    const child =
-        typeof children === 'string' ? (
-            <span>{children}</span>
-        ) : (
-            (React.Children.only(children) as JSX.Element)
-        );
-
-    const clonedEle = React.cloneElement(child, {
-        ...child.props,
-        onFocus: handleFocus,
-        onBlur: handleBlur,
-        onMouseEnter: handleMouseEnter,
-        onMouseLeave: handleMouseLeave,
-    });
-
     return (
         <>
-            {clonedEle}
+            <ChildrenWrapper
+                ref={targetElement}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                {children}
+            </ChildrenWrapper>
             {isOpen &&
                 createPortal(
                     <ContentWrapper ref={contentRef} $renderParams={renderParams}>
@@ -139,6 +126,10 @@ export function Tooltip({
 }
 
 Tooltip.Content = TooltipContent;
+
+const ChildrenWrapper = styled.div`
+    display: contents;
+`;
 
 const ContentWrapper = styled.div<{ $renderParams?: { x: number; y: number } }>`
     position: absolute;

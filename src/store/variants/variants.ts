@@ -23,6 +23,7 @@ type Variants = {
         deleteAll: () => void;
         rename: (variantId: string, name: string) => void;
         setFilenamePart: (part: 'prefix' | 'suffix', variantId: string, value: string) => void;
+        setPattern: (variantId: string, pattern: string) => void;
         setFilter: (variantId: string, filter: PicaFilter) => void;
         setQuality: (variantId: string, quality: number, regenerate?: boolean) => void;
         setSharpenAmount: (variantId: string, sharpenAmount: number, regenerate?: boolean) => void;
@@ -98,10 +99,18 @@ export const useVariants = create<Variants>((set, get) => ({
         },
         setFilenamePart(part, variantId, value) {
             const { variants, variant } = getVariantsWithIdCheck(variantId);
-
+            
             variant[part] = value;
-            useOutputImages.getState().api.updateVariantData(variant);
-
+            useOutputImages.getState().api.updateVariantData(variantId);
+            
+            set({ variants });
+        },
+        setPattern(variantId, pattern) {
+            const { variants, variant } = getVariantsWithIdCheck(variantId);
+            
+            variant.pattern = pattern;
+            
+            useOutputImages.getState().api.updateVariantData(variantId);
             set({ variants });
         },
         setFilter(variantId, filter) {

@@ -42,7 +42,7 @@ export function Setting({
         <Wrapper style={style}>
             {label && <Label $disabled={disabled}>{label}:</Label>}
             {clonedChildren}
-            {!noUnitSpace && <Unit $width={unitWidth}>{suffix}</Unit>}
+            {!noUnitSpace && <Suffix $width={unitWidth}>{suffix}</Suffix>}
         </Wrapper>
     );
 }
@@ -64,8 +64,12 @@ const Label = styled.span<{ $disabled?: boolean }>`
     ${props => props.$disabled && 'color: var(--control-default-fgColor-disabled) !important;'}
 `;
 
-const Unit = styled.span<{ $width: number }>`
+const Suffix = styled.span<{ $width: number }>`
     width: 100%;
     max-width: ${props => props.$width}px;
     cursor: default;
+    
+    svg {
+        font-size: 16px;
+    }
 `;

@@ -3,7 +3,7 @@ import { THUMBNAIL_SIZE } from '../../lib/constants';
 import {
     filenameToJpg,
     getFileExtension,
-    insertVariantDataToFilename,
+    getFileNameWithoutExtension,
     isJpg,
 } from '../../lib/helpers';
 import { Log } from '../../lib/log';
@@ -14,7 +14,7 @@ import {
     ResamplingSettings,
     SharpenSettings,
 } from '../utils';
-import { InputImageData, OutputImageData } from '../types';
+import { InputImageData, OutputImageData, PatternKeyword, Variant } from '../types';
 import { useVariants } from '../variants/variants';
 import { DEFAULT_CROP_SETTINGS } from '../../lib/config';
 import { useInputImages } from '../input-images';
@@ -136,12 +136,7 @@ export async function generateOutputImage(
         };
     }
 
-    let filename = insertVariantDataToFilename(inputImage.filename, variant.prefix, variant.suffix);
-
     const extension = resamplingData.quality < 1 ? 'jpeg' : getFileExtension(inputImage.filename);
-    if (extension === 'jpeg') {
-        filename = filenameToJpg(filename);
-    }
 
     const processedFull = await processImage(
         image,
@@ -196,7 +191,7 @@ export async function generateOutputImage(
 
     const index = useInputImages.getState().images.findIndex(i => i.id === inputImage.id);
 
-    return {
+    const finalOutputImage = {
         id,
         inputImage: {
             id: inputImage.id,
@@ -226,10 +221,93 @@ export async function generateOutputImage(
             height: processedFull.dimensions.height,
         },
 
-        filename,
+        filename: '',
 
         crop: cropData,
         resampling: resamplingData,
         sharpening: sharpeningData,
     };
+
+    let filename = getVariantFilenameForOutputImage(variant, finalOutputImage);
+    if (extension === 'jpeg') {
+        filename = filenameToJpg(filename);
+    }
+    finalOutputImage.filename = filename;
+
+    return finalOutputImage;
+}
+
+function handlePattern(pattern: string, outputImage: OutputImageData): string {
+    const regex = /{([\w,]+)}/g;
+    let finalFilename = pattern + '.' + getFileExtension(outputImage.inputImage.filename);
+
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(finalFilename)) !== null) {
+        const full = match[0];
+        const keyword = match[1];
+        const startIndex = match.index;
+        const matchLength = match[0].length;
+
+        const replacement = getReplacementForKeyword(keyword, outputImage, full);
+
+        finalFilename =
+            finalFilename.slice(0, startIndex) +
+            replacement +
+            finalFilename.slice(startIndex + matchLength);
+
+        regex.lastIndex = startIndex + replacement.length;
+    }
+
+    return finalFilename;
+}
+
+function handleNoPattern(variant: Variant, outputImage: OutputImageData): string {
+    const filename = outputImage.inputImage.filename;
+    const period = filename.lastIndexOf('.');
+    const newFilename = filename.substring(0, period);
+    const extension = filename.substring(period);
+
+    return variant.prefix + newFilename + variant.suffix + extension;
+}
+
+export const MAX_PAD = 5;
+
+function getReplacementForKeyword(
+    keyword: string,
+    outputImage: OutputImageData,
+    full: string
+): string {
+    if (keyword === PatternKeyword.FILENAME) {
+        return getFileNameWithoutExtension(outputImage.inputImage.filename);
+    } else if (keyword.startsWith(PatternKeyword.INDEX)) {
+        let idx = (outputImage.inputImage.index + 1).toString();
+
+        if (keyword.includes(',')) {
+            const padLength = parseInt(keyword.split(',')[1], 10);
+            if (!isNaN(padLength)) {
+                idx = idx.padStart(Math.min(MAX_PAD, padLength), '0');
+            }
+        }
+
+        return idx;
+    } else if (keyword === PatternKeyword.WIDTH) {
+        return outputImage.dimensions.width.toString();
+    } else if (keyword === PatternKeyword.HEIGHT) {
+        return outputImage.dimensions.height.toString();
+    }
+
+    return full;
+}
+
+export function getVariantFilenameForOutputImage(
+    variant: Variant,
+    outputImage: OutputImageData
+): string {
+    const { pattern } = variant;
+
+    if (pattern) {
+        return handlePattern(pattern, outputImage);
+    }
+
+    return handleNoPattern(variant, outputImage);
 }

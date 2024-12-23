@@ -12,7 +12,7 @@
     --shadow-xsmall: 0px 1px 0px 0px #1f23281a;
     --shadow-small: 0px 1px 0px 0px #1f23280a;
     --shadow-default: 0px 3px 6px 0px #424a531f;
-    --shadow-large: 0px 0px 0px 1px #d1d9e080, 0px 6px 12px -3px #25292e0a, 0px 6px 18px 0px #25292e1f;
+    --shadow-large: 0px 6px 12px -3px #25292e0a, 0px 6px 18px 0px #25292e1f;
 
     --spacing-small: 2.5px;
     --spacing-default: 5px;

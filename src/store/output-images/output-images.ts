@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { InputImageData, OutputImageData, PicaFilter, SelectedItem, Variant } from '../types';
-import { filenameToJpg, insertVariantDataToFilename } from '../../lib/helpers';
+import { InputImageData, OutputImageData, PicaFilter, SelectedItem } from '../types';
 import { useInputImages } from '../input-images';
 import { Log } from '../../lib/log';
 import { subscribeWithSelector } from 'zustand/middleware';
@@ -13,7 +12,12 @@ import {
     SharpenSettings,
     startProgress,
 } from '../utils';
-import { generateOutputImage, generateOutputImageVariants, getUpToDateVariant } from './utils';
+import {
+    generateOutputImage,
+    generateOutputImageVariants,
+    getUpToDateVariant,
+    getVariantFilenameForOutputImage,
+} from './utils';
 import { openToast, ToastType } from '../toasts';
 import { useApp } from '../app';
 import { CropSettings } from '../../lib/config';
@@ -27,7 +31,8 @@ type OutputImagesState = {
         regenerate: (imageId: string) => void;
         regenerateAll: () => void;
         regenerateVariant: (variantId: string) => void;
-        updateVariantData: (variant: Variant) => void;
+        regenerateFilenamesByInputImageIds: (ids: string[]) => void;
+        updateVariantData: (variantId: string) => void;
         updateInputImageIndexesByIds: (ids: string[], newIndexImages: InputImageData[]) => void;
         setCropData: (imageId: string, cropData: CropSettings) => void;
         setResamplingData: (
@@ -264,12 +269,9 @@ export const useOutputImages = create<OutputImagesState>()(
                         if (outputImages[i].variantId === variantId) {
                             const image = outputImages[i];
 
-                            outputImages[i].filename = insertVariantDataToFilename(
-                                variant.quality < 1
-                                    ? filenameToJpg(image.inputImage.filename)
-                                    : image.inputImage.filename,
-                                variant.prefix,
-                                variant.suffix
+                            outputImages[i].filename = getVariantFilenameForOutputImage(
+                                variant,
+                                image
                             );
                         }
                     }
@@ -291,21 +293,37 @@ export const useOutputImages = create<OutputImagesState>()(
                     );
                 }
             },
-            updateVariantData(variant) {
-                Log.debug('Updating variant data.', { variant });
+
+            updateVariantData(variantId) {
+                Log.debug('Updating variant data.', { variantId });
+                const { variant } = getVariantsWithIdCheck(variantId);
                 const images = [...get().images];
 
                 images.forEach(image => {
                     if (image.variantId === variant.id) {
-                        image.filename = insertVariantDataToFilename(
-                            image.inputImage.filename,
-                            variant.prefix,
-                            variant.suffix
-                        );
+                        image.filename = getVariantFilenameForOutputImage(variant, image);
                     }
                 });
 
                 set({ images });
+            },
+            regenerateFilenamesByInputImageIds(ids) {
+                const images = [...get().images];
+
+                for (let i = 0; i < ids.length; i++) {
+                    const id = ids[i];
+
+                    for (let j = 0; j < images.length; j++) {
+                        if (images[j].inputImage.id === id) {
+                            const image = images[j];
+
+                            image.filename = getVariantFilenameForOutputImage(
+                                getUpToDateVariant(image.variantId),
+                                image
+                            );
+                        }
+                    }
+                }
             },
             updateInputImageIndexesByIds(ids, newIndexImages) {
                 const images = [...get().images];
@@ -324,6 +342,8 @@ export const useOutputImages = create<OutputImagesState>()(
                 }
 
                 set({ images });
+
+                useOutputImages.getState().api.regenerateFilenamesByInputImageIds(ids);
             },
             setCropData(imageId, cropData) {
                 const outputImages = [...get().images];

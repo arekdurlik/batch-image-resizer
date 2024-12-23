@@ -92,6 +92,7 @@ export type Variant = {
     };
     prefix: string;
     suffix: string;
+    pattern: string;
     crop: boolean;
     filter: PicaFilter;
     quality: number;
@@ -115,3 +116,11 @@ export type SelectedItem =
           type: 'output';
           id: string;
       };
+
+export enum PatternKeyword {
+    INDEX = 'index',
+    FILENAME = 'filename',
+    WIDTH = 'width',
+    HEIGHT = 'height',
+    
+}

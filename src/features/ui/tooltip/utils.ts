@@ -14,7 +14,10 @@ export function getRenderParams(triggerRect: DOMRect, contentRect: DOMRect, plac
                 top = triggerRect.top + triggerRect.height + PADDING;
             }
 
-            left = triggerRect.left + (triggerRect.width - contentRect.width) / 2;
+            left = Math.max(
+                PADDING,
+                triggerRect.left + (triggerRect.width - contentRect.width) / 2
+            );
             break;
         }
         default:
@@ -24,7 +27,11 @@ export function getRenderParams(triggerRect: DOMRect, contentRect: DOMRect, plac
                 top = triggerRect.top - triggerRect.height - PADDING;
             }
 
-            left = triggerRect.left + (triggerRect.width - contentRect.width) / 2;
+            left = Math.max(
+                PADDING,
+                triggerRect.left + (triggerRect.width - contentRect.width) / 2
+            );
+
             break;
     }
 

@@ -34,14 +34,6 @@ export function changeFilename(file: string, newFilename: string) {
     return newFilename + extension;
 }
 
-export function insertVariantDataToFilename(filename: string, prefix?: string, suffix?: string) {
-    const period = filename.lastIndexOf('.');
-    const newFilename = filename.substring(0, period);
-    const extension = filename.substring(period);
-
-    return prefix + newFilename + suffix + extension;
-}
-
 export function compare(a: string | number, b: string | number) {
     if (a < b) {
         return -1;

@@ -51,6 +51,7 @@ function isVariant(obj: Record<string, unknown>): obj is Variant {
         (obj.height === undefined || typeof obj.width === 'object') &&
         (obj.prefix === undefined || typeof obj.prefix === 'string') &&
         (obj.suffix === undefined || typeof obj.suffix === 'string') &&
+        (obj.pattern === undefined || typeof obj.pattern === 'string') &&
         (obj.crop === undefined || typeof obj.crop === 'boolean') &&
         (obj.filter === undefined || typeof obj.filter === 'string') &&
         (obj.quality === undefined || typeof obj.quality === 'number') &&

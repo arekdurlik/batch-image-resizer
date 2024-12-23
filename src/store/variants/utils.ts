@@ -23,6 +23,7 @@ const defaultVariantSettings: Omit<Variant, 'id' | 'index' | 'name'> = {
     },
     prefix: '',
     suffix: '',
+    pattern: '',
     crop: false,
     filter: 'mks2013',
     quality: 1,
