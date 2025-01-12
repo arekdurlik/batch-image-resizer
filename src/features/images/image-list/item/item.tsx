@@ -84,7 +84,7 @@ export const Item = forwardRef<HTMLDivElement, Props>((props, ref) => {
     };
 
     const handleDrop = (event: DragEvent) => {
-        if (type === 'input' && 'index' in image) {
+        if (type === 'input') {
             const dropTargetIndex = index;
             const draggedIndex = parseInt(event.dataTransfer.getData('text/plain'));
             const images = useInputImages.getState().images;
